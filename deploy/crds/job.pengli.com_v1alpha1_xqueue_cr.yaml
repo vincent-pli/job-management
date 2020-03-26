@@ -1,0 +1,7 @@
+apiVersion: job.pengli.com/v1alpha1
+kind: XQueue
+metadata:
+  name: example-xqueue
+spec:
+  # Add fields here
+  size: 3

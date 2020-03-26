@@ -1,0 +1,11 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: job-management
+subjects:
+- kind: ServiceAccount
+  name: job-management
+roleRef:
+  kind: Role
+  name: job-management
+  apiGroup: rbac.authorization.k8s.io

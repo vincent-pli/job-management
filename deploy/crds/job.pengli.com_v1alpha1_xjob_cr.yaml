@@ -1,0 +1,7 @@
+apiVersion: job.pengli.com/v1alpha1
+kind: XJob
+metadata:
+  name: example-xjob
+spec:
+  # Add fields here
+  size: 3
