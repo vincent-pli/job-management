@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: job-management
+  namespace: job-system
 spec:
   replicas: 1
   selector:
@@ -16,7 +17,7 @@ spec:
       containers:
         - name: job-management
           # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: github.com/vincentpli/job-management/cmd/manager
           command:
           - job-management
           imagePullPolicy: Always

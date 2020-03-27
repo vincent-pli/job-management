@@ -1,11 +1,12 @@
-kind: RoleBinding
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: job-management
 subjects:
 - kind: ServiceAccount
   name: job-management
+  namespace: job-system
 roleRef:
-  kind: Role
+  kind: ClusterRole
   name: job-management
   apiGroup: rbac.authorization.k8s.io
