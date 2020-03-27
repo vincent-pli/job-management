@@ -13,6 +13,8 @@ import (
 
 	"github.com/vincent-pli/job-management/pkg/apis"
 	"github.com/vincent-pli/job-management/pkg/controller"
+	handler "github.com/vincent-pli/job-management/pkg/handler"
+	requesthandler "github.com/vincent-pli/job-management/pkg/request"
 	"github.com/vincent-pli/job-management/version"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
@@ -23,6 +25,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/restmapper"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
+	batchv1alpha1 "github.com/vincent-pli/job-management/pkg/apis/job/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -47,6 +50,7 @@ func printVersion() {
 }
 
 func main() {
+	var workThread int
 	// Add the zap logger flag set to the CLI. The flag set must
 	// be added before calling pflag.Parse().
 	pflag.CommandLine.AddFlagSet(zap.FlagSet())
@@ -54,6 +58,8 @@ func main() {
 	// Add flags registered by imported packages (e.g. glog and
 	// controller-runtime)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	flag.IntVar(&workThread, "worker-thread", 3,
+		"Number of worker thread to handle the request")
 
 	pflag.Parse()
 
@@ -101,13 +107,29 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Info("Registering Components.")
-
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}
+
+	requestHandler := requesthandler.NewRequestHandler(mgr.GetClient(), mgr.GetEventRecorderFor("command-handler"), uint32(workThread), mgr.GetScheme())
+	log.Info("Registering Components.")
+	mgr.Add(requestHandler)
+
+	// Register watcher
+	cache := mgr.GetCache()
+	xjob := &batchv1alpha1.XJob{}
+	xjobInformer, err := cache.GetInformer(xjob)
+	if err != nil {
+		log.Error(err, "cannot get informer by gvk")
+		os.Exit(1)
+	}
+
+	xjobInformer.AddEventHandler((&handler.JobeventHandler{
+		Handler: requestHandler,
+		Log:     logf.Log.WithName("jobeventhandler"),
+	}))
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
