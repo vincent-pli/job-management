@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"github.com/go-logr/logr"
 	batchv1alpha1 "github.com/vincent-pli/job-management/pkg/apis/job/v1alpha1"
 	request "github.com/vincent-pli/job-management/pkg/request"
@@ -16,6 +17,8 @@ type JobeventHandler struct {
 var _ cache.ResourceEventHandler = (*JobeventHandler)(nil)
 
 func (c *JobeventHandler) OnAdd(obj interface{}) {
+
+	fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 	job, ok := obj.(*batchv1alpha1.XJob)
 	if !ok {
 		c.Log.Error(nil, "obj is not XJob")

@@ -1,0 +1,17 @@
+apiVersion: job.pengli.com/v1alpha1
+kind: XJob
+metadata:
+  name: example-xjob
+spec:
+  queue: lsfqueue-sample
+  minAvailable: 1
+  priorityClassName: mid-priority
+  tasks:
+    - name: task-1
+      replicas: 1
+      template:
+        spec:
+          containers:
+            - name: sleep
+              image: docker
+              args: ["sleep", "600"]

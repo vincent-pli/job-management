@@ -3,5 +3,4 @@ kind: XQueue
 metadata:
   name: example-xqueue
 spec:
-  # Add fields here
-  size: 3
+  weight: 5

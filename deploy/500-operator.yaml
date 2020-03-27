@@ -17,9 +17,7 @@ spec:
       containers:
         - name: job-management
           # Replace this with the built image name
-          image: github.com/vincentpli/job-management/cmd/manager
-          command:
-          - job-management
+          image: github.com/vincent-pli/job-management/cmd/manager
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
