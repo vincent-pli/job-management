@@ -131,7 +131,6 @@ func main() {
 		Log:     logf.Log.WithName("jobeventhandler"),
 	}))
 
-	cache.Start(signals.SetupSignalHandler())
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
 		log.Error(err, "")
