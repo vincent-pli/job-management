@@ -12,7 +12,6 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/vincent-pli/job-management/pkg/apis"
-	"github.com/vincent-pli/job-management/pkg/controller"
 	handler "github.com/vincent-pli/job-management/pkg/handler"
 	requesthandler "github.com/vincent-pli/job-management/pkg/request"
 	"github.com/vincent-pli/job-management/version"
@@ -130,12 +129,6 @@ func main() {
 		Handler: requestHandler,
 		Log:     logf.Log.WithName("jobeventhandler"),
 	}))
-
-	// Setup all Controllers
-	if err := controller.AddToManager(mgr); err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
 
 	if err = serveCRMetrics(cfg); err != nil {
 		log.Info("Could not generate and serve custom resource metrics", "error", err.Error())
