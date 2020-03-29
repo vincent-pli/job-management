@@ -18,11 +18,14 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
 	maxRetries = 15
 )
+
+var _ manager.Runnable = &RequestHandler{}
 
 type RequestHandler struct {
 	client.Client
