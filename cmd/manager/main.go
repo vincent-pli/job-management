@@ -25,12 +25,14 @@ import (
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
 	batchv1alpha1 "github.com/vincent-pli/job-management/pkg/apis/job/v1alpha1"
+	"github.com/vincent-pli/job-management/pkg/webhooks"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -157,6 +159,14 @@ func main() {
 			log.Info("Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
 		}
 	}
+
+	// Setup webhooks
+	log.Info("setting up webhook server")
+	hookServer := mgr.GetWebhookServer()
+
+	log.Info("registering webhooks to the webhook server")
+	hookServer.Register("/mutate-v1alpha1-xjob", &webhook.Admission{Handler: &webhooks.XjobAnnotator{}})
+	// hookServer.Register("/validate-v1-pod", &webhook.Admission{Handler: &podValidator{}})
 
 	log.Info("Starting the Cmd.")
 
