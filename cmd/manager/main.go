@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -14,6 +15,7 @@ import (
 	"github.com/vincent-pli/job-management/pkg/apis"
 	handler "github.com/vincent-pli/job-management/pkg/handler"
 	requesthandler "github.com/vincent-pli/job-management/pkg/request"
+	"github.com/vincent-pli/job-management/pkg/utils"
 	"github.com/vincent-pli/job-management/version"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
@@ -161,12 +163,20 @@ func main() {
 	}
 
 	// Setup webhooks
+	// Generate ca
+	certDir := filepath.Join("/tmp/k8s-webhook-server/serving-certs", "tls.crt")
+	_, err = utils.GenerateSignedCertificate(namespace, certDir)
+	if err != nil {
+		log.Error(err, "Manager exited non-zero")
+		os.Exit(1)
+	}
+
 	log.Info("setting up webhook server")
 	hookServer := mgr.GetWebhookServer()
 
 	log.Info("registering webhooks to the webhook server")
-	hookServer.Register("/mutate-v1alpha1-xjob", &webhook.Admission{Handler: &webhooks.XjobAnnotator{}})
-	// hookServer.Register("/validate-v1-pod", &webhook.Admission{Handler: &podValidator{}})
+	hookServer.Register("/mutate-v1alpha1-xjob", &webhook.Admission{Handler: &webhooks.XjobAnnotator{Client: mgr.GetClient()}})
+	// hookServer.Register("/validate-v1-pod", &webhook.Admission{Handler: &podValidator{Client: mgr.GetClient()}})
 
 	log.Info("Starting the Cmd.")
 

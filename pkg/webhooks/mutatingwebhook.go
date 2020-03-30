@@ -30,7 +30,7 @@ import (
 
 // XjobAnnotator annotates Xjobs
 type XjobAnnotator struct {
-	client  client.Client
+	Client  client.Client
 	decoder *admission.Decoder
 }
 
@@ -54,15 +54,6 @@ func (a *XjobAnnotator) Handle(ctx context.Context, req admission.Request) admis
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
-}
-
-// XjobAnnotator implements inject.Client.
-// A client will be automatically injected.
-
-// InjectClient injects the client.
-func (a *XjobAnnotator) InjectClient(c client.Client) error {
-	a.client = c
-	return nil
 }
 
 // XjobAnnotator implements admission.DecoderInjector.
