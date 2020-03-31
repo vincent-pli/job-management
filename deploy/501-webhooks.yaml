@@ -25,18 +25,18 @@ webhooks:
     name: job-webhook-service
     namespace: job-system
     path: /validate-v1alpha1-xjob
-failurePolicy: Fail
-name: validation.webhook
-rules:
-- apiGroups:
-  - job.pengli.com
-  apiVersions:
-  - v1alpha1
-  operations:
-  - CREATE
-  - UPDATE
-  resources:
-  - xjobs
+  failurePolicy: Fail
+  name: validation.webhook
+  rules:
+  - apiGroups:
+    - job.pengli.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - xjobs
 
 ---
 apiVersion: admissionregistration.k8s.io/v1beta1
