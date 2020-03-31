@@ -20,13 +20,13 @@ metadata:
     job.pengli.com/release: devel
 webhooks:
 - clientConfig:
-  caBundle: Cg==
-  service:
-    name: job-webhook-service
-    namespace: job-system
-    path: /validate-v1alpha1-xjob
+    caBundle: Cg==
+    service:
+      name: job-webhook-service
+      namespace: job-system
+      path: /validate-v1alpha1-xjob
   failurePolicy: Fail
-  name: validation.webhook
+  name: validation.webhook.job
   rules:
   - apiGroups:
     - job.pengli.com
@@ -53,7 +53,7 @@ webhooks:
       namespace: job-system
       path: /mutate-v1alpha1-xjob
   failurePolicy: Fail
-  name: mutating.webhook
+  name: mutating.webhook.job
   rules:
   - apiGroups:
     - job.pengli.com

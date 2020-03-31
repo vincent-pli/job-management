@@ -126,7 +126,7 @@ func main() {
 	}
 
 	requestHandler := requesthandler.NewRequestHandler(mgr.GetClient(), mgr.GetEventRecorderFor("command-handler"), uint32(workThread), mgr.GetScheme())
-	log.Info("Registering Components.")
+	log.Info("Registering Components: requesetHandler"
 	mgr.Add(requestHandler)
 
 	// Register watcher
@@ -180,24 +180,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = updateMutationWebhookConfiguration(mgr.GetClient(), ca)
-	if err != nil {
-		log.Error(err, "Manager exited non-zero")
-		os.Exit(1)
-	}
-
-	err = updateValidationWebhookConfiguration(mgr.GetClient(), ca)
-	if err != nil {
-		log.Error(err, "Manager exited non-zero")
-		os.Exit(1)
-	}
-
 	log.Info("setting up webhook server")
 	hookServer := mgr.GetWebhookServer()
 
 	log.Info("registering webhooks to the webhook server")
 	hookServer.Register("/mutate-v1alpha1-xjob", &webhook.Admission{Handler: &webhooks.XjobAnnotator{Client: mgr.GetClient()}})
 	// hookServer.Register("/validate-v1-pod", &webhook.Admission{Handler: &podValidator{Client: mgr.GetClient()}})
+
+	webhookHandler := &webhooks.WebhookHandler{Client: mgr.GetClient(), ca: ca}
+	log.Info("Registering Components: webhookHandler")
+	mgr.Add(webhookHandler)
 
 	log.Info("Starting the Cmd.")
 
@@ -206,46 +198,6 @@ func main() {
 		log.Error(err, "Manager exited non-zero")
 		os.Exit(1)
 	}
-}
-
-func updateMutationWebhookConfiguration(client client.Client, ca []byte) error {
-	mutator := &admissionregistration.MutatingWebhookConfiguration{}
-	nameNamespace := types.NamespacedName{
-		Name: mutatingWebhookName,
-	}
-
-	err := client.Get(context.TODO(), nameNamespace, mutator)
-	if err != nil {
-		return err
-	}
-
-	mutator.Webhooks[0].ClientConfig.CABundle = ca
-	if err := client.Update(context.TODO(), mutator); err != nil {
-		log.Error(err, fmt.Sprintf("Failed to update mutation webhook %s", mutatingWebhookName))
-		return nil
-	}
-	log.Info(fmt.Sprintf("Update mutation webhook %s", mutatingWebhookName))
-	return nil
-}
-
-func updateValidationWebhookConfiguration(client client.Client, ca []byte) error {
-	validate := &admissionregistration.ValidatingWebhookConfiguration{}
-	nameNamespace := types.NamespacedName{
-		Name: validationWebhookName,
-	}
-
-	err := client.Get(context.TODO(), nameNamespace, validate)
-	if err != nil {
-		return err
-	}
-
-	validate.Webhooks[0].ClientConfig.CABundle = ca
-	if err := client.Update(context.TODO(), validate); err != nil {
-		log.Error(err, fmt.Sprintf("Failed to update validating webhook %s", validationWebhookName))
-		return nil
-	}
-	log.Info(fmt.Sprintf("Update validating webhook %s", validationWebhookName))
-	return nil
 }
 
 // serveCRMetrics gets the Operator/CustomResource GVKs and generates metrics based on those types.
