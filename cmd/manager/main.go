@@ -9,6 +9,7 @@ import (
 	"runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
@@ -28,13 +29,21 @@ import (
 	"github.com/spf13/pflag"
 	batchv1alpha1 "github.com/vincent-pli/job-management/pkg/apis/job/v1alpha1"
 	"github.com/vincent-pli/job-management/pkg/webhooks"
+	admissionregistration "k8s.io/api/admissionregistration/v1beta1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+)
+
+const (
+	mutatingWebhookName   = "mutating.webhook.job.pengli.com"
+	validationWebhookName = "validation.webhook.job.pengli.com"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -165,7 +174,19 @@ func main() {
 	// Setup webhooks
 	// Generate ca
 	certDir := filepath.Join("/tmp/k8s-webhook-server/serving-certs", "tls.crt")
-	_, err = utils.GenerateSignedCertificate(namespace, certDir)
+	ca, err := utils.GenerateSignedCertificate(namespace, certDir)
+	if err != nil {
+		log.Error(err, "Manager exited non-zero")
+		os.Exit(1)
+	}
+
+	err = updateMutationWebhookConfiguration(mgr.GetClient(), ca)
+	if err != nil {
+		log.Error(err, "Manager exited non-zero")
+		os.Exit(1)
+	}
+
+	err = updateValidationWebhookConfiguration(mgr.GetClient(), ca)
 	if err != nil {
 		log.Error(err, "Manager exited non-zero")
 		os.Exit(1)
@@ -185,6 +206,46 @@ func main() {
 		log.Error(err, "Manager exited non-zero")
 		os.Exit(1)
 	}
+}
+
+func updateMutationWebhookConfiguration(client client.Client, ca []byte) error {
+	mutator := &admissionregistration.MutatingWebhookConfiguration{}
+	nameNamespace := types.NamespacedName{
+		Name: mutatingWebhookName,
+	}
+
+	err := client.Get(context.TODO(), nameNamespace, mutator)
+	if err != nil {
+		return err
+	}
+
+	mutator.Webhooks[0].ClientConfig.CABundle = ca
+	if err := client.Update(context.TODO(), mutator); err != nil {
+		log.Error(err, fmt.Sprintf("Failed to update mutation webhook %s", mutatingWebhookName))
+		return nil
+	}
+	log.Info(fmt.Sprintf("Update mutation webhook %s", mutatingWebhookName))
+	return nil
+}
+
+func updateValidationWebhookConfiguration(client client.Client, ca []byte) error {
+	validate := &admissionregistration.ValidatingWebhookConfiguration{}
+	nameNamespace := types.NamespacedName{
+		Name: validationWebhookName,
+	}
+
+	err := client.Get(context.TODO(), nameNamespace, validate)
+	if err != nil {
+		return err
+	}
+
+	validate.Webhooks[0].ClientConfig.CABundle = ca
+	if err := client.Update(context.TODO(), validate); err != nil {
+		log.Error(err, fmt.Sprintf("Failed to update validating webhook %s", validationWebhookName))
+		return nil
+	}
+	log.Info(fmt.Sprintf("Update validating webhook %s", validationWebhookName))
+	return nil
 }
 
 // serveCRMetrics gets the Operator/CustomResource GVKs and generates metrics based on those types.

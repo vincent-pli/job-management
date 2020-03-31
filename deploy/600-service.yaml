@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: job-webhook-service
+  namespace: job-system
+spec:
+  ports:
+  - port: 443
+    targetPort: 443
+  selector:
+    name: job-management
