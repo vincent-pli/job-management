@@ -27,11 +27,11 @@ type certificate struct {
 	Key  string
 }
 
-const WebhookServiceName = "multicloudhub-operator-webhook"
+const WebhookServiceName = "job-webhook-service"
 
 func GenerateSignedCertificate(namespace, certDir string) ([]byte, error) {
 	daysValid := 3650
-	ca, err := generateCertificateAuthority("multicloudhub-webhook", daysValid)
+	ca, err := generateCertificateAuthority("job-webhook", daysValid)
 	if err != nil {
 		return nil, err
 	}

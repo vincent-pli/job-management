@@ -29,21 +29,13 @@ import (
 	"github.com/spf13/pflag"
 	batchv1alpha1 "github.com/vincent-pli/job-management/pkg/apis/job/v1alpha1"
 	"github.com/vincent-pli/job-management/pkg/webhooks"
-	admissionregistration "k8s.io/api/admissionregistration/v1beta1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-)
-
-const (
-	mutatingWebhookName   = "mutating.webhook.job.pengli.com"
-	validationWebhookName = "validation.webhook.job.pengli.com"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -113,6 +105,7 @@ func main() {
 		Namespace:          namespace,
 		MapperProvider:     restmapper.NewDynamicRESTMapper,
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
+		Port:               8443,
 	})
 	if err != nil {
 		log.Error(err, "")
@@ -126,7 +119,7 @@ func main() {
 	}
 
 	requestHandler := requesthandler.NewRequestHandler(mgr.GetClient(), mgr.GetEventRecorderFor("command-handler"), uint32(workThread), mgr.GetScheme())
-	log.Info("Registering Components: requesetHandler"
+	log.Info("Registering Components: requesetHandler")
 	mgr.Add(requestHandler)
 
 	// Register watcher
@@ -173,8 +166,9 @@ func main() {
 
 	// Setup webhooks
 	// Generate ca
-	certDir := filepath.Join("/tmp/k8s-webhook-server/serving-certs", "tls.crt")
-	ca, err := utils.GenerateSignedCertificate(namespace, certDir)
+	certDir := filepath.Join("/tmp/k8s-webhook-server/serving-certs")
+	//namespace: job-ssytem hardcode here, will enhance later
+	ca, err := utils.GenerateSignedCertificate("job-system", certDir)
 	if err != nil {
 		log.Error(err, "Manager exited non-zero")
 		os.Exit(1)
@@ -185,9 +179,9 @@ func main() {
 
 	log.Info("registering webhooks to the webhook server")
 	hookServer.Register("/mutate-v1alpha1-xjob", &webhook.Admission{Handler: &webhooks.XjobAnnotator{Client: mgr.GetClient()}})
-	// hookServer.Register("/validate-v1-pod", &webhook.Admission{Handler: &podValidator{Client: mgr.GetClient()}})
+	hookServer.Register("/validate-v1alpha1-xjob", &webhook.Admission{Handler: &webhooks.XjobValidator{Client: mgr.GetClient()}})
 
-	webhookHandler := &webhooks.WebhookHandler{Client: mgr.GetClient(), ca: ca}
+	webhookHandler := &webhooks.WebhookHandler{Client: mgr.GetClient(), Ca: ca}
 	log.Info("Registering Components: webhookHandler")
 	mgr.Add(webhookHandler)
 

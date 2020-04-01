@@ -1,1 +1,2 @@
-defaultBaseImage: registry.access.redhat.com/ubi7/ubi-minimal:latest
+defaultBaseImage: registry.access.redhat.com/ubi8/ubi-minimal:latest
+#defaultBaseImage: ubuntu
